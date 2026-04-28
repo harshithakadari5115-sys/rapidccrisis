@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function getProfile(uid) { return get(/databases/$(database)/documents/profiles/$(uid)).data; }
+    function isStaff() { return isSignedIn() && (getProfile(request.auth.uid).role == 'staff' || getProfile(request.auth.uid).role == 'admin'); }
+    function isAdmin() { return isSignedIn() && getProfile(request.auth.uid).role == 'admin'; }
+
+    // --- Profiles ---
+    match /profiles/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isStaff();
+      
+      allow create: if isOwner(userId) && 
+        request.resource.data.keys().hasAll(['uid', 'role', 'displayName']) &&
+        request.resource.data.role in ['guest', 'staff', 'admin'];
+      
+      allow update: if isOwner(userId) && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'location', 'displayName', 'currentIncidentId', 'role', 'updatedAt'])
+      ) || isAdmin();
+    }
+
+    // --- Incidents ---
+    match /incidents/{incidentId} {
+      allow get: if isSignedIn();
+      allow list: if isStaff() || (isSignedIn() && resource.data.guestId == request.auth.uid);
+      
+      allow create: if isSignedIn() && 
+        request.resource.data.guestId == request.auth.uid &&
+        request.resource.data.status == 'active';
+      
+      allow update: if (isStaff() && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'responderIds', 'priority', 'updatedAt', 'aiAdvice', 'notes'])
+      )) || (isOwner(resource.data.guestId) && 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) && 
+          request.resource.data.status == 'cancelled'
+      );
+    }
+
+    // --- Broadcasts ---
+    match /broadcasts/{broadcastId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // --- Tracking ---
+    match /tracking/{trackingId} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+  }
+}

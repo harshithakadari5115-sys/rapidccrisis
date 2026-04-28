@@ -1,0 +1,9 @@
+{
+  "name": "Rapid Crisis Response System",
+  "description": "An AI-powered emergency response platform for hotels and malls featuring instant SOS, real-time tracking, and automated responder assignment.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

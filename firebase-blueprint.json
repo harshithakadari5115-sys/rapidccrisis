@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "Incident": {
+      "title": "Incident",
+      "description": "An emergency incident triggered by a guest.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["fire", "medical", "security", "other"] },
+        "status": { "type": "string", "enum": ["active", "assigned", "resolved", "cancelled"] },
+        "location": {
+          "type": "object",
+          "properties": {
+            "room": { "type": "string" },
+            "floor": { "type": "string" },
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "guestId": { "type": "string" },
+        "guestName": { "type": "string" },
+        "responderIds": { "type": "array", "items": { "type": "string" } },
+        "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "status", "guestId", "createdAt"]
+    },
+    "Profile": {
+      "title": "Profile",
+      "description": "User profile and role information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["guest", "staff", "admin"] },
+        "status": { "type": "string", "enum": ["available", "busy", "offline"] },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "currentIncidentId": { "type": "string" }
+      },
+      "required": ["uid", "role"]
+    },
+    "Tracking": {
+      "title": "Tracking",
+      "description": "Patient tracking through the emergency lifecycle.",
+      "type": "object",
+      "properties": {
+        "incidentId": { "type": "string" },
+        "status": { "type": "string", "enum": ["room", "staff", "ambulance", "hospital"] },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["incidentId", "status", "updatedAt"]
+    },
+    "Broadcast": {
+      "title": "Broadcast",
+      "description": "Official safety alerts broadcasted to all users.",
+      "type": "object",
+      "properties": {
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["danger", "warning", "info"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["message", "type", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/incidents/{incidentId}": {
+      "schema": "Incident",
+      "description": "Active and past incidents."
+    },
+    "/profiles/{userId}": {
+      "schema": "Profile",
+      "description": "User profile data."
+    },
+    "/tracking/{trackingId}": {
+      "schema": "Tracking",
+      "description": "Lifecycle tracking for patients/incidents."
+    },
+    "/broadcasts/{broadcastId}": {
+      "schema": "Broadcast",
+      "description": "Global emergency alerts."
+    }
+  }
+}
